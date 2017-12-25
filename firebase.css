@@ -1,0 +1,19 @@
+h1 {
+	text-align: center bold ;
+	text-shadow: 5px 5px #a7c3f2;
+	background: url("extras/trees/jpeg");
+	height:350px;
+	position: fixed;
+}
+
+body{
+	background: white url("extras/tracks.jpg") no-repeat fixed center;
+}
+
+.panel-body {
+	background: #a7c3f2;
+	background-image: url(extras/trees.jpeg);
+	background-size: cover;
+	height: 250px
+	}
+
