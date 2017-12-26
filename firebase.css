@@ -1,12 +1,17 @@
-h1 {
+.jumbotron h1 h3 {
+	color: #052a66;
 	text-align: center bold ;
-	text-shadow: 5px 5px #a7c3f2;
 	background: #fff;
 	height:150px;
 	position: fixed center;
 	overflow: hidden;
-	
+	}
 
+.jumbotron{
+	opacity: 0.8;
+}
+.container-fluid{
+	opacity: 0.9;
 }
 
 body{
@@ -21,3 +26,10 @@ body{
 	opacity:0.2;
 	}
 
+.fa-train {
+	color: #a7c3f2;
+}
+
+h5{
+	color:#a7c3f2;
+}
