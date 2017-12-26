@@ -1,9 +1,12 @@
 h1 {
 	text-align: center bold ;
 	text-shadow: 5px 5px #a7c3f2;
-	background: url("extras/trees/jpeg");
-	height:350px;
-	position: fixed;
+	background: #fff;
+	height:150px;
+	position: fixed center;
+	overflow: hidden;
+	
+
 }
 
 body{
@@ -11,9 +14,10 @@ body{
 }
 
 .panel-body {
-	background: #a7c3f2;
-	background-image: url(extras/trees.jpeg);
+	background:white;
+	position:relative;
 	background-size: cover;
 	height: 250px
+	opacity:0.2;
 	}
 
