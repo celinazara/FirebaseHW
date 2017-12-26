@@ -1,17 +1,6 @@
-// Steps to complete:
-/*
-1. Create Firebase link
-2. Create initial train data in database
-3. Create button for adding new trains - then update the html + update the database
-4. Create a way to retrieve trains from the trainlist.
-5. Create a way to calculate the time way. Using difference between start and current time.Then take the difference and modulus by frequency. (This step can be completed in either 3 or 4)
-*/
-// 1. Link to Firebase
-var trainData = new Firebase("https://mysecondproject-2d80d.firebaseio.com//");
 
 
-
-  // Initialize Firebase
+ // Initialize Firebase
   var config = {
     apiKey: "AIzaSyC6Jis1j9ekHs0u53UsCgCJuglMKFljwVA",
     authDomain: "mysecondproject-2d80d.firebaseapp.com",
@@ -22,110 +11,151 @@ var trainData = new Firebase("https://mysecondproject-2d80d.firebaseio.com//");
   };
   firebase.initializeApp(config);
 
+  
+  var database= firebase.database();
 
-// 2. Populate Firebase Database with initial data (in this case, I did this via Firebase GUI)
+  var trainName ="";
+  var destination= "";
+  var firstTrainTime = "";
+  var frequency = 0;
+  var currentTime= moment();
+  var index= 0;
+  var trainIDs = [];
 
-// 3. Button for adding trains
-$("#addTrainBtn").on("click", function(){
+// Show current time
+var datetime = null,
+date = null;
 
-	// Grabs user input
-	var trainName = $("#trainNameInput").val().trim();
-	var destination = $("#destinationInput").val().trim();
-	var firstTrainUnix = moment($("#firstTrainInput").val().trim(), "HH:mm").subtract(10, "years").format("X");
-	var frequency = $("#frequencyInput").val().trim();
+var update = function () {
+  date = moment(new Date())
+  datetime.html(date.format('dddd, MMMM Do YYYY, h:mm:ss a'));
+};
 
-	// Creates local "temporary" object for holding train data
-	var newTrain = {
-		name:  trainName,
-		destination: destination,
-		firstTrain: firstTrainUnix,
-		frequency: frequency
-	}
-
-	// Uploads train data to the database
-	trainData.push(newTrain);
-
-	// Logs everything to console
-	console.log(newTrain.name);
-	console.log(newTrain.destination); 
-	console.log(firstTrainUnix);
-	console.log(newTrain.frequency)
-
-	// Alert
-	alert("Train successfully added");
-
-	// Clears all of the text-boxes
-	$("#trainNameInput").val("");
-	$("#destinationInput").val("");
-	$("#firstTrainInput").val("");
-	$("#frequencyInput").val("");
-
-	// Determine when the next train arrives.
-	return false;
+$(document).ready(function(){
+  datetime = $('#current-status')
+  update();
+  setInterval(update, 1000);
 });
 
 
-// 4. Create Firebase event for adding trains to the database and a row in the html when a user adds an entry
-trainData.on("child_added", function(childSnapshot, prevChildKey){
+// Capture Button Click
+$("#add-train").on("click", function() {
 
-	console.log(childSnapshot.val());
+  // Grabbed values from text boxes
+  trainName = $("#train-name").val().trim();
+  destination = $("#destination").val().trim();
+  firstTrainTime = $("#train-time").val().trim();
+  frequency = $("#frequency").val().trim();
+  
+  // First Time (pushed back 1 year to make sure it comes before current time)
+  var firstTimeConverted = moment(firstTrainTime, "hh:mm").subtract(1, "years");
+  //console.log("FTC: "+firstTimeConverted);
 
-	// Store everything into a variable.
-	var tName = childSnapshot.val().name;
-	var tDestination = childSnapshot.val().destination;
-	var tFrequency = childSnapshot.val().frequency;
-	var tFirstTrain = childSnapshot.val().firstTrain;
+  // Difference between the times
+  var diffTime = moment().diff(moment(firstTimeConverted), "minutes");
+  //console.log("Difference in time: " + diffTime);
 
-	// Calculate the minutes until arrival using hardcore math
-	// To calculate the minutes till arrival, take the current time in unix subtract the FirstTrain time and find the modulus between the difference and the frequency  
-	var differenceTimes = moment().diff(moment.unix(tFirstTrain), "minutes");
-	var tRemainder = moment().diff(moment.unix(tFirstTrain), "minutes") % tFrequency ;
-	var tMinutes = tFrequency - tRemainder;
+  // Time apart (remainder)
+  var tRemainder = diffTime % frequency;
+  //console.log(tRemainder);
 
-	// To calculate the arrival time, add the tMinutes to the currrent time
-	var tArrival = moment().add(tMinutes, "m").format("hh:mm A"); 
-	console.log(tMinutes);
-	console.log(tArrival);
+  // Minute Until Train
+  var minutesAway = frequency - tRemainder;
+  //console.log("Minutes away: " + minutesAway);
 
-	console.log(moment().format("hh:mm A"));
-	console.log(tArrival);
-	console.log(moment().format("X"));
+  // Next Train
+  var nextTrain = moment().add(minutesAway, "minutes");
+  //console.log("Arrival time: " + moment(nextTrain).format("hh:mm"));
 
-	// Add each train's data into the table 
-	$("#trainTable > tbody").append("<tr><td>" + tName + "</td><td>" + tDestination + "</td><td>" + tFrequency + "</td><td>" + tArrival + "</td><td>" + tMinutes + "</td></tr>");
+  // Arrival time
+  var nextArrival = moment(nextTrain).format("hh:mm a");
 
+  var nextArrivalUpdate = function() {
+    date = moment(new Date())
+    datetime.html(date.format('hh:mm a'));
+  }
+
+  // Code for handling the push
+  database.ref().push({
+    trainName: trainName,
+    destination: destination,
+    firstTrainTime: firstTrainTime,
+    frequency: frequency,
+    minutesAway: minutesAway,
+    nextArrival: nextArrival,
+    dateAdded: firebase.database.ServerValue.TIMESTAMP
+  });
+  
+  alert("Form submitted!");
+
+  // Empty text input
+  $("#train-name").val("");
+  $("#destination").val("");
+  $("#train-time").val("");
+  $("#frequency").val("");
+  
+  // Don't refresh the page!
+  return false; 
 });
 
+// Delete function
+// $(document).on("click", ".delete", function(){
+//   var confirmDelete = confirm("Are you sure you want to delete this entry?");
+  
+//    if (confirmDelete){
+//     var entry = $(this).attr("data-index");
+//     database.ref().child(trainIDs[entry]).remove();
+//     location.reload();
+//    } else{
+//      return false;
+//    }
+  
+// });
 
-// Assume the following situations. 
-
-// (TEST 1) 
-// First Train of the Day is 3:00 AM 
-// Assume Train comes every 3 minutes.
-// Assume the current time is 3:16 AM....
-// What time would the next train be...? (Use your brain first)
-// It would be 3:18 -- 2 minutes away
-
-// (TEST 2) 
-// First Train of the Day is 3:00 AM 
-// Assume Train comes every 7 minutes.
-// Assume the current time is 3:16 AM....
-// What time would the next train be...? (Use your brain first)
-// It would be 3:21 -- 5 minutes away
+// Firebase watcher + initial loader HINT: This code behaves similarly to .on("child_added")
+// This will only show the 25 latest entries
+  database.ref().orderByChild("dateAdded").limitToLast(25).on("child_added", function(snapshot) {
 
 
-// ==========================================================
+    console.log("Train name: " + snapshot.val().trainName);
+    console.log("Destination: " + snapshot.val().destination);
+    console.log("First train: " + snapshot.val().firstTrainTime);
+    console.log("Frequency: " + snapshot.val().frequency);
+    console.log("Next train: " + snapshot.val().nextArrival);
+    console.log("Minutes away: " + snapshot.val().minutesAway);
+    console.log("==============================");
 
-// Solved Mathematically
-// Test case 1: 
-// 16 - 00 = 16
-// 16 % 3 = 1 (Modulus is the remainder)
-// 3 - 1 = 2 minutes away
-// 2 + 3:16 = 3:18
 
-// Solved Mathematically  
-// Test case 2: 
-// 16 - 00 = 16
-// 16 % 7 = 2 (Modulus is the remainder)
-// 7 - 2 = 5 minutes away
-// 5 + 3:16 = 3:21
+  // Change the HTML to reflect
+  $("#new-train").append("<tr><td>" + snapshot.val().trainName + "</td>" +
+    "<td>" + snapshot.val().destination + "</td>" + 
+    "<td>" + "Every " + snapshot.val().frequency + " mins" + "</td>" + 
+    "<td>" + snapshot.val().nextArrival + "</td>" +
+    "<td>" + snapshot.val().minutesAway + " mins until arrival" + "</td>" +
+   // "<td><button class='delete btn btn-default btn-sm' data-index='" + index + "'><span class='glyphicon glyphicon-trash'></span></button> " + 
+   // "<button type='button' class='btn btn-default btn-sm'><span class='glyphicon glyphicon-edit'></span></button>" +
+    "</td></tr>");
+
+  index++;
+
+  // Handle the errors
+  }, function(errorObject) {
+    console.log("Errors handled: " + errorObject.code);
+  });
+
+  //Gets the train IDs in an Array
+  database.ref().once('value', function(dataSnapshot){ 
+    var trainIndex = 0;
+
+      dataSnapshot.forEach(
+          function(childSnapshot) {
+              trainIDs[trainIndex++] = childSnapshot.key();
+          }
+      );
+  });
+
+  console.log(trainIDs);
+
+
+
+
